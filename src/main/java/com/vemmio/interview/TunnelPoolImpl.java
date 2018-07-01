@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -20,10 +22,25 @@ public class TunnelPoolImpl implements TunnelPool {
     }
 
     @Override
-    public Future<Tunnel> get(TunnelId id) throws TunnelPoolShutdownException {
-        return null;
-    }
+    public Future<Tunnel> get(TunnelId id) throws TunnelPoolShutdownException{
+    	Callable<Tunnel> callable = new Callable<Tunnel>() {
+    		@Override
+    		public Tunnel call() throws TunnelNotStartedException {
+    			TunnelImpl a = new TunnelImpl(id);
+    			return a;
+    		}
+    	};
+    	Future<Tunnel> future = executorService.submit(callable);
+		try {
+			factory.create(id);
+		} catch (TunnelNotStartedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
+    	return future;
+    }
+    
     @Override
     public Collection<Future<Tunnel>> getAll() {
         return Collections.emptyList();
